@@ -1,0 +1,7 @@
+{
+  "extends": "../../tsconfig.workspace.base.json",
+  "compilerOptions": {
+    "rootDir": "src", "outDir": "lib/types", "tsBuildInfoFile": "lib/tsconfig.host.tsbuildinfo", "types": ["node"]
+  },
+  "files": ["src/index.ts"]
+}

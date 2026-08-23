@@ -1,0 +1,24 @@
+{
+  "name": "dsh-skin-platform-workspace",
+  "version": "0.1.0",
+  "description": "Independent multi-package skin platform for DeepSeek Harness",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "pnpm -r --sort run build",
+    "typecheck": "pnpm -r --sort run typecheck",
+    "test": "vitest run",
+    "pack:all": "node scripts/pack-all.mjs"
+  },
+  "packageManager": "pnpm@11.7.0",
+  "engines": {
+    "node": "^22.19.0 || >=24"
+  },
+  "devDependencies": {
+    "@types/node": "24.12.4",
+    "tsdown": "0.21.5",
+    "typescript": "6.0.3",
+    "vitest": "4.1.8"
+  },
+  "license": "MIT"
+}

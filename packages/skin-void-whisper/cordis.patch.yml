@@ -1,0 +1,4 @@
+- insert:
+    - id: skin-void-whisper
+      name: 'dsh-skin-void-whisper'
+      inject: [skinAssets]
