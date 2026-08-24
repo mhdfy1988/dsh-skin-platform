@@ -82,6 +82,7 @@ export function apply(ctx: ClientContext): void {
   ctx.provide('skinRuntime', runtime)
   ctx.effect(() => ctx.locale.register(NS, { zh, en }), 'skin-runtime: dictionaries')
   const t = ctx.locale.bind(NS) as SkinSectionInjected['t']
+  installNavMarker(ctx, t)
 
   ctx.slots.inject('settings.section', () => ctx.slots.register({
     name: 'settings.section',
@@ -97,6 +98,27 @@ export function apply(ctx: ClientContext): void {
     order: 90,
     inject: (): SkinOverlayInjected => ({ runtime }),
   }, SkinOverlay))
+}
+
+function installNavMarker(ctx: ClientContext, t: SkinSectionInjected['t']): void {
+  ctx.effect(() => {
+    if (typeof document === 'undefined') return () => {}
+    const attribute = 'data-dsp-skin-nav'
+    const scan = (): void => {
+      document.querySelectorAll<HTMLElement>(`[${attribute}]`).forEach(element => { element.removeAttribute(attribute) })
+      const label = t('nav').trim()
+      document.querySelectorAll<HTMLElement>('[role="dialog"] nav button').forEach(button => {
+        if (button.textContent?.trim() === label) button.setAttribute(attribute, 'true')
+      })
+    }
+    const observer = new MutationObserver(scan)
+    observer.observe(document.documentElement, { childList: true, characterData: true, subtree: true })
+    scan()
+    return () => {
+      observer.disconnect()
+      document.querySelectorAll<HTMLElement>(`[${attribute}]`).forEach(element => { element.removeAttribute(attribute) })
+    }
+  }, 'skin-runtime: settings navigation icon')
 }
 
 /** Subscribe one React surface to the runtime snapshot store. */

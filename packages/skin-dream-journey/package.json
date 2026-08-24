@@ -1,6 +1,6 @@
 {
   "name": "dsh-skin-dream-journey",
-  "version": "0.1.1-rc.1",
+  "version": "0.1.1",
   "description": "Cute pastel Chinese-fantasy skin for dsh-skin-runtime",
   "type": "module",
   "main": "lib/index.js",
@@ -37,7 +37,7 @@
   "peerDependencies": {
     "@deepseek-ai/cordis": "^4.0.1",
     "@deepseek-ai/dsh-client-runtime": "0.1.1-rc.2",
-    "dsh-skin-runtime": "0.1.1-rc.1"
+    "dsh-skin-runtime": "0.1.1"
   },
   "devDependencies": {
     "@deepseek-ai/cordis": "4.0.1",

@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-08-25
+
 ### Added
 
 - 新增“梦境仙游”独立皮肤包，使用原创云境灵兽 PNG、瓷白半透明表面、桃花暖粉、天青玉色与淡金描边。
@@ -14,6 +16,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 ### Changed
 
 - 重写根 README 与三个包 README，明确正式 `web` 配置档案的安装、同版本组合更新、单皮肤与整个平台卸载、进程重启要求和设置页使用流程。
+- “皮肤”设置入口始终使用独立的调色盘图标，不再沿用未知设置项的齿轮回退图标；栏目是否选中只影响背景和边框状态。
 
 ### Fixed
 
@@ -49,5 +52,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - Agent 预设的当前使用徽标和选中卡片改用皮肤令牌，不再显示突兀的纯白选中态。
 - 更新或临时卸载当前皮肤包时保留持久化选择；同 ID 包重新注册后自动恢复，不再静默改回 Harness 默认外观。
 
-[Unreleased]: https://github.com/mhdfy1988/dsh-skin-platform/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/mhdfy1988/dsh-skin-platform/compare/v0.1.1...HEAD
+[0.1.1]: https://github.com/mhdfy1988/dsh-skin-platform/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/mhdfy1988/dsh-skin-platform/releases/tag/v0.1.0

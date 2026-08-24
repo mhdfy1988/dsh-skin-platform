@@ -1,6 +1,6 @@
 # dsh-skin-dream-journey
 
-`dsh-skin-dream-journey` 是 DSH 皮肤平台的可爱国风浅色主题包，提供青白与桃粉配色、轻量边框、选中状态、对话输入框、轨迹视图和设置页适配。它使用原创云境灵兽背景，不包含游戏角色、标识或原画。当前版本为 `0.1.1-rc.1`，精确依赖 `dsh-skin-runtime@0.1.1-rc.1`。
+`dsh-skin-dream-journey` 是 DSH 皮肤平台的可爱国风浅色主题包，提供青白与桃粉配色、轻量边框、选中状态、对话输入框、轨迹视图和设置页适配。它使用原创云境灵兽背景，不包含游戏角色、标识或原画。当前正式版本为 `0.1.1`，精确依赖 `dsh-skin-runtime@0.1.1`。
 
 ## 安装与更新
 
@@ -8,7 +8,7 @@
 
 ```powershell
 $SkinRepo = 'D:\deepseek\dsh-skin-platform'
-$Version = '0.1.1-rc.1'
+$Version = '0.1.1'
 
 Remove-Item Env:DSH_HOME -ErrorAction SilentlyContinue
 Set-Location 'D:\deepseek\deepseek-harness-master'

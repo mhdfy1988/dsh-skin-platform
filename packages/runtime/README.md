@@ -2,7 +2,7 @@
 
 `dsh-skin-runtime` 是 DSH 皮肤平台的运行时与管理界面插件。它负责发现已安装皮肤、切换当前皮肤、保存每个皮肤各自的本机背景，并向设置页提供皮肤管理入口。
 
-当前兼容组合为 `dsh-skin-runtime@0.1.1-rc.1`、`dsh-skin-void-whisper@0.1.1-rc.1` 和 `dsh-skin-dream-journey@0.1.1-rc.1`。两个皮肤包都精确依赖同版本运行时，安装或更新时应保持版本一致。
+当前正式兼容组合为 `dsh-skin-runtime@0.1.1`、`dsh-skin-void-whisper@0.1.1` 和 `dsh-skin-dream-journey@0.1.1`。两个皮肤包都精确依赖同版本运行时，安装或更新时应保持版本一致。
 
 ## 安装与更新
 
@@ -13,7 +13,7 @@
 ```powershell
 $SkinRepo = 'D:\deepseek\dsh-skin-platform'
 $HarnessRepo = 'D:\deepseek\deepseek-harness-master'
-$Version = '0.1.1-rc.1'
+$Version = '0.1.1'
 
 Remove-Item Env:DSH_HOME -ErrorAction SilentlyContinue
 Set-Location $HarnessRepo

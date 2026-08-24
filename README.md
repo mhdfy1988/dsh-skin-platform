@@ -2,7 +2,7 @@
 
 DeepSeek Harness 的独立多包皮肤平台。它不修改官方 Harness 源码，通过共享运行时和独立皮肤包提供安装、切换、本机背景、更新、卸载及安全恢复能力。
 
-当前推荐安装版本为 `0.1.1-rc.1`，适配 DeepSeek Harness `0.1.1-rc.2`，仅支持 Web 客户端。当前仓库没有发布 npm 包，安装来源是本仓库构建出的 tgz。
+当前正式安装版本为 `0.1.1`，适配 DeepSeek Harness `0.1.1-rc.2`，仅支持 Web 客户端。当前仓库没有发布 npm 包，安装来源是 GitHub Release 或本仓库构建出的 tgz。
 
 ## 包组成
 
@@ -27,7 +27,7 @@ DeepSeek Harness 的独立多包皮肤平台。它不修改官方 Harness 源码
 ```powershell
 $SkinRepo = 'D:\deepseek\dsh-skin-platform'
 $HarnessRepo = 'D:\deepseek\deepseek-harness-master'
-$Version = '0.1.1-rc.1'
+$Version = '0.1.1'
 ```
 
 默认正式 Harness home 是 `C:\Users\<用户名>\.dsh`。如果当前终端设置过测试用 `DSH_HOME`，正式安装前必须清除该临时覆盖，避免把包安装进隔离测试目录。
@@ -48,9 +48,9 @@ pnpm.cmd run pack:all
 成功后，`artifacts` 目录应包含：
 
 ```text
-dsh-skin-runtime-0.1.1-rc.1.tgz
-dsh-skin-void-whisper-0.1.1-rc.1.tgz
-dsh-skin-dream-journey-0.1.1-rc.1.tgz
+dsh-skin-runtime-0.1.1.tgz
+dsh-skin-void-whisper-0.1.1.tgz
+dsh-skin-dream-journey-0.1.1.tgz
 ```
 
 `pack:all` 不会清空旧版本包，也拒绝覆盖已经存在的同版本 tgz。不要删除仍被 Harness 配置档案引用的旧 tgz；需要重新打包时应先提高包版本，并同步三个包的兼容版本。
@@ -187,7 +187,7 @@ pnpm.cmd dsh web --port 3080
 
 ### 切换皮肤后背景还是上一套图片
 
-`0.1.1-rc.1` 起，本机背景和显示参数按皮肤 ID 独立保存。确认运行时和两个皮肤包均已更新到同一个兼容版本，并完成重启。
+`0.1.1` 起，本机背景和显示参数按皮肤 ID 独立保存。确认运行时和两个皮肤包均已更新到同一个兼容版本，并完成重启。
 
 ### 卸载后出现缺失皮肤诊断
 
