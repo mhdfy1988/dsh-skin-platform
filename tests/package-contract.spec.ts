@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
 
 const root = resolve(fileURLToPath(new URL('..', import.meta.url)))
-const packageDirs = ['runtime', 'skin-void-whisper'] as const
+const packageDirs = ['runtime', 'skin-void-whisper', 'skin-dream-journey'] as const
 
 function read(relative: string): string {
   return readFileSync(resolve(root, relative), 'utf8')
@@ -26,18 +26,27 @@ describe('installable package contracts', () => {
   it('uses Cordis service names rather than plugin entry ids for Host ordering', () => {
     const runtimePatch = read('packages/runtime/cordis.patch.yml')
     expect(runtimePatch).toContain('inject: [settings, webServer]')
-    for (const dir of ['skin-void-whisper']) {
+    for (const dir of ['skin-void-whisper', 'skin-dream-journey']) {
       const patch = read(`packages/${dir}/cordis.patch.yml`)
       expect(patch).toContain('inject: [skinAssets]')
       expect(patch).not.toContain('inject: [skin-runtime]')
     }
   })
 
-  it('ships original SVG assets without executable content', () => {
-    for (const dir of ['skin-void-whisper']) {
-      const svg = read(`packages/${dir}/assets/background.svg`)
-      expect(svg).toContain('<svg')
-      expect(svg).not.toMatch(/<script\b/i)
-    }
+  it('ships the original SVG without executable content', () => {
+    const svg = read('packages/skin-void-whisper/assets/background.svg')
+    expect(svg).toContain('<svg')
+    expect(svg).not.toMatch(/<script\b/i)
+  })
+
+  it('ships the original dream background as a real PNG', () => {
+    const png = readFileSync(resolve(root, 'packages/skin-dream-journey/assets/background.png'))
+    expect(png.subarray(0, 8).toString('hex')).toBe('89504e470d0a1a0a')
+  })
+
+  it('retains published archives and refuses to overwrite an existing version', () => {
+    const packScript = read('scripts/pack-all.mjs')
+    expect(packScript).not.toContain('rmSync(artifacts')
+    expect(packScript).toContain('Refusing to overwrite existing package archive')
   })
 })

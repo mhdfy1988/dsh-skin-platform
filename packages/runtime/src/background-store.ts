@@ -7,6 +7,7 @@ import { resolveDshHome } from '@deepseek-ai/dsh-home-paths'
 
 const BACKGROUND_DIRECTORY = 'skin-runtime'
 const BACKGROUND_FILENAME = 'user-background'
+const SKIN_ID_PATTERN = /^[a-z][a-z0-9-]*$/
 
 /** Supported raster formats after byte-signature validation. */
 export const SUPPORTED_BACKGROUND_MIME_TYPES = [
@@ -88,30 +89,31 @@ export function detectBackgroundMimeType(bytes: Uint8Array): StoredBackground['m
   return undefined
 }
 
-/** One fixed private file under the active Harness home. */
+/** Private skin-scoped files under the active Harness home. */
 export class CustomBackgroundStore {
-  readonly filename: string
+  private readonly directory: string
 
-  /** Resolve the profile-local storage target once at plugin activation. */
+  /** Resolve the profile-local storage directory once at plugin activation. */
   constructor(dshHome?: string) {
     if (dshHome !== undefined && dshHome.trim().length === 0) {
       throw new TypeError('skin-runtime: dshHome must not be blank')
     }
-    this.filename = join(resolveDshHome(dshHome), BACKGROUND_DIRECTORY, BACKGROUND_FILENAME)
+    this.directory = join(resolveDshHome(dshHome), BACKGROUND_DIRECTORY)
   }
 
-  /** Validate and atomically replace the stored background. */
-  async write(body: Buffer): Promise<StoredBackground> {
+  /** Validate and atomically replace one skin's stored background. */
+  async write(skinId: string, body: Buffer): Promise<StoredBackground> {
     const mimeType = detectBackgroundMimeType(body)
     if (mimeType === undefined) throw new UnsupportedBackgroundError()
-    await mkdir(dirname(this.filename), {
+    const filename = this.resolveFilename(skinId)
+    await mkdir(dirname(filename), {
       recursive: true,
       mode: 0o700,
     })
-    const temporary = `${this.filename}.${randomBytes(6).toString('hex')}.tmp`
+    const temporary = `${filename}.${randomBytes(6).toString('hex')}.tmp`
     try {
       await writeFile(temporary, body, { flag: 'wx', mode: 0o600 })
-      await rename(temporary, this.filename)
+      await rename(temporary, filename)
     } catch (error) {
       await rm(temporary, { force: true })
       throw error
@@ -119,17 +121,25 @@ export class CustomBackgroundStore {
     return describe(body, mimeType)
   }
 
-  /** Read and revalidate the stored image before serving it. */
-  async read(): Promise<StoredBackgroundBody> {
-    const body = await readFile(this.filename)
+  /** Read and revalidate one skin's stored image before serving it. */
+  async read(skinId: string): Promise<StoredBackgroundBody> {
+    const body = await readFile(this.resolveFilename(skinId))
     const mimeType = detectBackgroundMimeType(body)
     if (mimeType === undefined) throw new UnsupportedBackgroundError()
     return { body, ...describe(body, mimeType) }
   }
 
-  /** Remove exactly the runtime-owned background file. */
-  async remove(): Promise<void> {
-    await rm(this.filename, { force: true })
+  /** Remove exactly one skin's runtime-owned background file. */
+  async remove(skinId: string): Promise<void> {
+    await rm(this.resolveFilename(skinId), { force: true })
+  }
+
+  /** Resolve only validated skin ids beneath the private runtime directory. */
+  private resolveFilename(skinId: string): string {
+    if (!SKIN_ID_PATTERN.test(skinId)) {
+      throw new TypeError(`skin id ${JSON.stringify(skinId)} must match ${String(SKIN_ID_PATTERN)}`)
+    }
+    return join(this.directory, skinId, BACKGROUND_FILENAME)
   }
 }
 

@@ -24,12 +24,12 @@ const NS = 'settings.skin-runtime'
 
 const en = {
   nav: 'Skins', kicker: 'SKIN RUNTIME', title: 'Appearance workshop',
-  intro: 'Combine installed skin packages with one private background from this device.',
+  intro: 'Combine installed skin packages, each with its own private background from this device.',
   installed: 'INSTALLED', persistenceHost: 'Saved to Host', persistenceMemory: 'This browser only', persistenceLoading: 'Loading settings',
   motion: 'Ambient motion', defaultName: 'Harness default', defaultDescription: 'Remove the active skin layer and use the official appearance.',
   active: 'ACTIVE', use: 'Use this skin', using: 'In use', restore: 'Restore default', applying: 'Applying…',
   backgroundKicker: 'LOCAL BACKGROUND', backgroundTitle: 'Your backdrop', backgroundLocal: 'LOCAL ONLY',
-  backgroundEmpty: 'Choose PNG, JPEG, WebP, GIF, or AVIF up to 25 MB.', backgroundStored: 'Kept in this Harness profile and never bundled with a skin package.',
+  backgroundEmpty: 'Choose PNG, JPEG, WebP, GIF, or AVIF up to 25 MB for this skin.', backgroundStored: 'Kept for this skin in the current Harness profile and never bundled with its package.',
   chooseImage: 'Choose image', replaceImage: 'Replace image', removeImage: 'Remove', uploading: 'Saving…', removing: 'Removing…',
   showBackground: 'Show background', fit: 'Fill', cover: 'Cover', contain: 'Contain', position: 'Anchor',
   positionCenter: 'Center', positionTop: 'Top', positionBottom: 'Bottom', positionLeft: 'Left', positionRight: 'Right',
@@ -38,12 +38,12 @@ const en = {
 
 const zh: Record<keyof typeof en, string> = {
   nav: '皮肤', kicker: 'SKIN RUNTIME', title: '外观工坊',
-  intro: '组合已安装的皮肤包，并使用一张仅保存在本机的背景图片。',
+  intro: '组合已安装的皮肤包，并为每套皮肤分别保存本机背景。',
   installed: '已安装', persistenceHost: '已保存到宿主', persistenceMemory: '仅当前浏览器', persistenceLoading: '正在读取设置',
   motion: '环境动效', defaultName: 'Harness 默认', defaultDescription: '释放当前皮肤效果，恢复官方默认外观。',
   active: '使用中', use: '使用此皮肤', using: '当前皮肤', restore: '恢复默认', applying: '切换中…',
   backgroundKicker: '本机背景', backgroundTitle: '我的背景', backgroundLocal: '仅本机',
-  backgroundEmpty: '支持 PNG、JPEG、WebP、GIF、AVIF，最大 25 MB。', backgroundStored: '图片只保存在当前 Harness 配置档案，不会打进皮肤安装包。',
+  backgroundEmpty: '为当前皮肤选择 PNG、JPEG、WebP、GIF 或 AVIF，最大 25 MB。', backgroundStored: '图片只属于当前皮肤，并保存在当前 Harness 配置档案中。',
   chooseImage: '选择图片', replaceImage: '更换图片', removeImage: '移除', uploading: '保存中…', removing: '移除中…',
   showBackground: '显示背景', fit: '填充', cover: '铺满', contain: '完整显示', position: '位置',
   positionCenter: '居中', positionTop: '顶部', positionBottom: '底部', positionLeft: '左侧', positionRight: '右侧',
@@ -134,7 +134,7 @@ function SkinCard(props: {
   </article>
 }
 
-/** Render the one profile-local background and its compact live controls. */
+/** Render the active skin's profile-local background and compact live controls. */
 function BackgroundStudio(props: {
   runtime: SkinRuntime
   snapshot: SkinRuntimeSnapshot

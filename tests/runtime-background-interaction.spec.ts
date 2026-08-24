@@ -2,33 +2,40 @@ import { describe, expect, it, vi } from 'vitest'
 import { SkinRuntime } from '../packages/runtime/src/client/runtime.ts'
 import {
   DEFAULT_SKIN_ID,
+  SKIN_API_VERSION,
   defaultCustomBackground,
   type CustomBackgroundSettings,
+  type SkinPack,
   type SkinSettings,
 } from '../packages/runtime/src/types.ts'
 
 interface PendingWrite {
-  next: CustomBackgroundSettings
+  next: Record<string, CustomBackgroundSettings>
   resolve: () => void
 }
 
 function createHarness(): {
   runtime: SkinRuntime
   pending: PendingWrite[]
-  publishHost: (background: CustomBackgroundSettings) => void
+  publishHost: (skinId: string, background: CustomBackgroundSettings) => void
   set: ReturnType<typeof vi.fn>
 } {
   let value: SkinSettings = {
     activeSkinId: DEFAULT_SKIN_ID,
     motionEnabled: true,
-    customBackground: defaultCustomBackground(),
+    customBackgrounds: {},
   }
   const listeners = new Set<() => void>()
   const pending: PendingWrite[] = []
   const set = vi.fn((field: string, next: unknown): Promise<void> => {
-    if (field !== 'customBackground') throw new Error(`unexpected field ${field}`)
+    if (field === 'activeSkinId') {
+      value = { ...value, activeSkinId: next as string }
+      for (const listener of listeners) listener()
+      return Promise.resolve()
+    }
+    if (field !== 'customBackgrounds') throw new Error(`unexpected field ${field}`)
     return new Promise(resolve => {
-      pending.push({ next: next as CustomBackgroundSettings, resolve })
+      pending.push({ next: next as Record<string, CustomBackgroundSettings>, resolve })
     })
   })
   const settings = {
@@ -57,8 +64,11 @@ function createHarness(): {
     runtime,
     pending,
     set,
-    publishHost: background => {
-      value = { ...value, customBackground: { ...background } }
+    publishHost: (skinId, background) => {
+      value = {
+        ...value,
+        customBackgrounds: { ...value.customBackgrounds, [skinId]: { ...background } },
+      }
       for (const listener of listeners) listener()
     },
   }
@@ -76,15 +86,56 @@ describe('background visual interaction', () => {
     await Promise.resolve()
     expect(harness.pending).toHaveLength(1)
 
-    harness.publishHost({ ...defaultCustomBackground(), shade: 0.28 })
+    harness.publishHost(DEFAULT_SKIN_ID, { ...defaultCustomBackground(), shade: 0.28 })
     expect(harness.runtime.getSnapshot().customBackground.shade).toBe(0.61)
 
     const write = harness.pending.shift()
     if (write === undefined) throw new Error('missing queued background write')
-    harness.publishHost(write.next)
+    const written = write.next[DEFAULT_SKIN_ID]
+    if (written === undefined) throw new Error('missing default-skin background')
+    harness.publishHost(DEFAULT_SKIN_ID, written)
     write.resolve()
     await persisted
 
     expect(harness.runtime.getSnapshot().customBackground.shade).toBe(0.61)
   })
+
+  it('restores each skin background independently when the active skin changes', async () => {
+    const harness = createHarness()
+    const voidPack = createPack('void-whisper')
+    const dreamPack = createPack('dream-journey')
+    harness.runtime.register(voidPack)
+    harness.runtime.register(dreamPack)
+    harness.publishHost(voidPack.id, { ...defaultCustomBackground(), enabled: true, revision: 'a'.repeat(64), shade: 0.54 })
+    harness.publishHost(dreamPack.id, { ...defaultCustomBackground(), enabled: true, revision: 'b'.repeat(64), shade: 0.12 })
+
+    await harness.runtime.select(voidPack.id)
+    expect(harness.runtime.getSnapshot().customBackground.shade).toBe(0.54)
+    expect(harness.runtime.getSnapshot().customBackgroundUrl).toContain('/void-whisper?')
+
+    await harness.runtime.select(dreamPack.id)
+    expect(harness.runtime.getSnapshot().customBackground.shade).toBe(0.12)
+    expect(harness.runtime.getSnapshot().customBackgroundUrl).toContain('/dream-journey?')
+  })
 })
+
+function createPack(id: string): SkinPack {
+  return {
+    apiVersion: SKIN_API_VERSION,
+    id,
+    name: id,
+    description: '测试皮肤',
+    version: '0.1.0',
+    dshRange: '0.1.1-rc.2',
+    colorScheme: 'fixed-dark',
+    previewUrl: `/skin-assets/${id}/background.png`,
+    tokens: {},
+    appearance: {
+      backgroundUrl: `/skin-assets/${id}/background.png`,
+      backgroundPosition: 'center',
+      accent: '#9877f5',
+      glow: '#754cff',
+      fontFamily: 'serif',
+    },
+  }
+}

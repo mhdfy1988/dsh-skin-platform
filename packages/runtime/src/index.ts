@@ -13,7 +13,7 @@ import {
   CUSTOM_BACKGROUND_ROUTE,
   DEFAULT_SKIN_ID,
   SKIN_SETTINGS_NAMESPACE,
-  defaultCustomBackground,
+  type CustomBackgroundSettings,
   type SkinAssetDefinition,
   type SkinAssetPack,
   type SkinSettings,
@@ -48,18 +48,20 @@ const SKIN_ID_PATTERN = /^[a-z][a-z0-9-]*$/
 const CONTENT_TYPE_PATTERN = /^[a-z0-9.+-]+\/[a-z0-9.+-]+$/i
 const namespace = settingsNamespace(SKIN_SETTINGS_NAMESPACE)
 
+const CustomBackgroundSettingsSchema: z<CustomBackgroundSettings> = z.object({
+  enabled: z.boolean().required(),
+  revision: z.string().required(),
+  fit: z.union([z.const('cover'), z.const('contain')]).required(),
+  position: z.union([z.const('center'), z.const('top'), z.const('bottom'), z.const('left'), z.const('right')]).required(),
+  opacity: z.number().min(0.15).max(1).required(),
+  blur: z.number().min(0).max(24).required(),
+  shade: z.number().min(0).max(0.85).required(),
+})
+
 const SkinSettingsSchema: z<SkinSettings> = z.object({
   activeSkinId: z.string().default(DEFAULT_SKIN_ID),
   motionEnabled: z.boolean().default(true),
-  customBackground: z.object({
-    enabled: z.boolean().required(),
-    revision: z.string().required(),
-    fit: z.union([z.const('cover'), z.const('contain')]).required(),
-    position: z.union([z.const('center'), z.const('top'), z.const('bottom'), z.const('left'), z.const('right')]).required(),
-    opacity: z.number().min(0.15).max(1).required(),
-    blur: z.number().min(0).max(24).required(),
-    shade: z.number().min(0).max(0.85).required(),
-  }).default(defaultCustomBackground()),
+  customBackgrounds: z.dict(CustomBackgroundSettingsSchema).default({}),
 })
 
 interface RegisteredAsset {
@@ -166,8 +168,14 @@ export class SkinAssetsService extends Service {
       res.end('bad request')
       return
     }
-    if (pathname === CUSTOM_BACKGROUND_ROUTE) {
-      await this.serveCustomBackground(req, res)
+    if (pathname === CUSTOM_BACKGROUND_ROUTE || pathname.startsWith(`${CUSTOM_BACKGROUND_ROUTE}/`)) {
+      const skinId = pathname.slice(CUSTOM_BACKGROUND_ROUTE.length + 1)
+      if (!SKIN_ID_PATTERN.test(skinId)) {
+        res.writeHead(404)
+        res.end('not found')
+        return
+      }
+      await this.serveCustomBackground(skinId, req, res)
       return
     }
     if (req.method !== 'GET' && req.method !== 'HEAD') {
@@ -210,18 +218,18 @@ export class SkinAssetsService extends Service {
     }
   }
 
-  /** Serve, replace, or remove the single private local background. */
-  private async serveCustomBackground(req: IncomingMessage, res: ServerResponse): Promise<void> {
+  /** Serve, replace, or remove one skin's private local background. */
+  private async serveCustomBackground(skinId: string, req: IncomingMessage, res: ServerResponse): Promise<void> {
     switch (req.method) {
       case 'GET':
       case 'HEAD':
-        await this.readCustomBackground(req, res)
+        await this.readCustomBackground(skinId, req, res)
         return
       case 'POST':
-        await this.writeCustomBackground(req, res)
+        await this.writeCustomBackground(skinId, req, res)
         return
       case 'DELETE':
-        await this.removeCustomBackground(req, res)
+        await this.removeCustomBackground(skinId, req, res)
         return
       default:
         res.writeHead(405, { Allow: 'GET, HEAD, POST, DELETE' })
@@ -230,9 +238,9 @@ export class SkinAssetsService extends Service {
   }
 
   /** Return the current image only to the same-origin page that owns the UI. */
-  private async readCustomBackground(req: IncomingMessage, res: ServerResponse): Promise<void> {
+  private async readCustomBackground(skinId: string, req: IncomingMessage, res: ServerResponse): Promise<void> {
     try {
-      const stored = await this.backgroundStore.read()
+      const stored = await this.backgroundStore.read(skinId)
       const etag = `"${stored.revision}"`
       if (req.headers['if-none-match'] === etag) {
         res.writeHead(304, {
@@ -262,7 +270,7 @@ export class SkinAssetsService extends Service {
   }
 
   /** Accept one validated same-origin raster upload and return its content revision. */
-  private async writeCustomBackground(req: IncomingMessage, res: ServerResponse): Promise<void> {
+  private async writeCustomBackground(skinId: string, req: IncomingMessage, res: ServerResponse): Promise<void> {
     if (!isSameOriginMutation(req)) {
       req.resume()
       sendJson(res, 403, { error: 'same-origin request required' })
@@ -276,7 +284,7 @@ export class SkinAssetsService extends Service {
     }
     try {
       const body = await readBackgroundBody(req, this.maxBackgroundBytes)
-      const stored = await this.backgroundStore.write(body)
+      const stored = await this.backgroundStore.write(skinId, body)
       sendJson(res, 201, stored)
     } catch (error) {
       if (error instanceof BackgroundTooLargeError) {
@@ -293,14 +301,14 @@ export class SkinAssetsService extends Service {
   }
 
   /** Disable storage without touching any skin-package asset. */
-  private async removeCustomBackground(req: IncomingMessage, res: ServerResponse): Promise<void> {
+  private async removeCustomBackground(skinId: string, req: IncomingMessage, res: ServerResponse): Promise<void> {
     if (!isSameOriginMutation(req)) {
       res.writeHead(403)
       res.end('same-origin request required')
       return
     }
     try {
-      await this.backgroundStore.remove()
+      await this.backgroundStore.remove(skinId)
       res.writeHead(204)
       res.end()
     } catch (error) {

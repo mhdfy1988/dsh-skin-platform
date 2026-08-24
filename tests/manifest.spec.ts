@@ -1,10 +1,11 @@
 import { describe, expect, it } from 'vitest'
+import { pack as dreamJourney } from '../packages/skin-dream-journey/src/client/index.ts'
 import { pack as voidWhisper } from '../packages/skin-void-whisper/src/client/index.ts'
 import { resolveSkinTokenOverrides } from '../packages/runtime/src/client/runtime.ts'
 import { SKIN_RUNTIME_CSS } from '../packages/runtime/src/client/styles.ts'
 import { SKIN_API_VERSION } from '../packages/runtime/src/types.ts'
 
-const packs = [voidWhisper]
+const packs = [voidWhisper, dreamJourney]
 
 describe('declarative skin manifests', () => {
   it('use unique ids and runtime-owned asset routes', () => {
@@ -55,5 +56,9 @@ describe('declarative skin manifests', () => {
 
   it('keeps the void whisper background free of a decorative overlay badge', () => {
     expect(voidWhisper.overlay).toBeUndefined()
+  })
+
+  it('keeps the dream journey background free of a decorative overlay badge', () => {
+    expect(dreamJourney.overlay).toBeUndefined()
   })
 })

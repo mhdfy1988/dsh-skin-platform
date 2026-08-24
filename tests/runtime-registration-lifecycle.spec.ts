@@ -1,11 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 import { SkinRuntime } from '../packages/runtime/src/client/runtime.ts'
-import {
-  SKIN_API_VERSION,
-  defaultCustomBackground,
-  type SkinPack,
-  type SkinSettings,
-} from '../packages/runtime/src/types.ts'
+import { SKIN_API_VERSION, type SkinPack, type SkinSettings } from '../packages/runtime/src/types.ts'
 
 const pack: SkinPack = {
   apiVersion: SKIN_API_VERSION,
@@ -30,7 +25,7 @@ function createRuntime(): { runtime: SkinRuntime; set: ReturnType<typeof vi.fn> 
   const value: SkinSettings = {
     activeSkinId: pack.id,
     motionEnabled: true,
-    customBackground: defaultCustomBackground(),
+    customBackgrounds: {},
   }
   const set = vi.fn(async () => {})
   const settings = {

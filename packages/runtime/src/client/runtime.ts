@@ -127,6 +127,7 @@ export class SkinRuntime {
   private desiredSkinId = DEFAULT_SKIN_ID
   private activePack: SkinPack | null = null
   private motionEnabled = true
+  private customBackgrounds: Record<string, CustomBackgroundSettings> = {}
   private customBackground = defaultCustomBackground()
   private customBackgroundPreviewActive = false
   private pendingCustomBackgroundWrites = 0
@@ -187,8 +188,11 @@ export class SkinRuntime {
       throw new Error(`skin ${JSON.stringify(desired)} is not installed`)
     }
     this.desiredSkinId = desired
+    this.customBackgroundPreviewActive = false
+    this.customBackground = this.resolveCustomBackground(desired)
     this.error = null
     this.reconcileDesired()
+    this.applyCustomBackground()
     this.publish()
     await this.settings.set('activeSkinId', desired)
   }
@@ -203,14 +207,15 @@ export class SkinRuntime {
 
   /** Upload one local raster image, display it immediately, and persist its revision. */
   async uploadCustomBackground(file: File): Promise<void> {
-    const response = await fetch(CUSTOM_BACKGROUND_ROUTE, {
+    const skinId = this.desiredSkinId
+    const response = await fetch(customBackgroundRoute(skinId), {
       method: 'POST',
       headers: { 'Content-Type': file.type || 'application/octet-stream' },
       body: file,
     })
     if (!response.ok) throw new Error(await readResponseError(response, '背景图片保存失败。'))
     const stored = parseStoredBackground(await response.json())
-    await this.commitCustomBackground({
+    await this.commitCustomBackground(skinId, {
       ...this.customBackground,
       enabled: true,
       revision: stored.revision,
@@ -222,7 +227,7 @@ export class SkinRuntime {
     if (enabled && this.customBackground.revision.length === 0) {
       throw new Error('请先选择一张背景图片。')
     }
-    await this.commitCustomBackground({ ...this.customBackground, enabled })
+    await this.commitCustomBackground(this.desiredSkinId, { ...this.customBackground, enabled })
   }
 
   /** Apply visual-control movement immediately without writing the Host settings field. */
@@ -235,13 +240,14 @@ export class SkinRuntime {
 
   /** Apply and persist one group of visual controls. */
   async updateCustomBackground(patch: CustomBackgroundVisualPatch): Promise<void> {
-    await this.commitCustomBackground({ ...this.customBackground, ...patch })
+    await this.commitCustomBackground(this.desiredSkinId, { ...this.customBackground, ...patch })
   }
 
   /** Reset the setting first, then remove exactly the local runtime-owned file. */
   async removeCustomBackground(): Promise<void> {
-    await this.commitCustomBackground(defaultCustomBackground())
-    const response = await fetch(CUSTOM_BACKGROUND_ROUTE, { method: 'DELETE' })
+    const skinId = this.desiredSkinId
+    await this.commitCustomBackground(skinId, defaultCustomBackground())
+    const response = await fetch(customBackgroundRoute(skinId), { method: 'DELETE' })
     if (!response.ok) throw new Error(await readResponseError(response, '本地背景文件未能删除。'))
   }
 
@@ -256,7 +262,8 @@ export class SkinRuntime {
       this.desiredSkinId = value.activeSkinId
       this.motionEnabled = value.motionEnabled
       if (!this.customBackgroundPreviewActive && this.pendingCustomBackgroundWrites === 0) {
-        this.customBackground = { ...value.customBackground }
+        this.customBackgrounds = cloneCustomBackgrounds(value.customBackgrounds)
+        this.customBackground = this.resolveCustomBackground(this.desiredSkinId)
       }
       this.applyMotionAttribute()
       this.reconcileDesired()
@@ -337,7 +344,7 @@ export class SkinRuntime {
       return
     }
     body.dataset.dshCustomBackground = 'true'
-    body.style.setProperty('--dsp-custom-background-image', `url("${customBackgroundUrl(background.revision)}")`)
+    body.style.setProperty('--dsp-custom-background-image', `url("${customBackgroundUrl(this.desiredSkinId, background.revision)}")`)
     body.style.setProperty('--dsp-custom-background-position', background.position)
     body.style.setProperty('--dsp-custom-background-size', background.fit)
     body.style.setProperty('--dsp-custom-background-opacity', String(background.opacity))
@@ -346,14 +353,18 @@ export class SkinRuntime {
   }
 
   /** Publish one optimistic treatment and serialize durable writes without accepting stale echoes. */
-  private async commitCustomBackground(next: CustomBackgroundSettings): Promise<void> {
+  private async commitCustomBackground(skinId: string, next: CustomBackgroundSettings): Promise<void> {
     this.customBackgroundPreviewActive = false
-    this.customBackground = { ...next }
-    this.applyCustomBackground()
-    this.publish()
+    const backgrounds = cloneCustomBackgrounds({ ...this.customBackgrounds, [skinId]: next })
+    this.customBackgrounds = backgrounds
+    if (this.desiredSkinId === skinId) {
+      this.customBackground = { ...next }
+      this.applyCustomBackground()
+      this.publish()
+    }
     this.pendingCustomBackgroundWrites += 1
     const write = this.customBackgroundWriteTail.then(async () => {
-      await this.settings.set('customBackground', next)
+      await this.settings.set('customBackgrounds', backgrounds)
     })
     this.customBackgroundWriteTail = write.catch(() => {})
     try {
@@ -377,7 +388,7 @@ export class SkinRuntime {
       customBackground: Object.freeze({ ...this.customBackground }),
       customBackgroundUrl: this.customBackground.revision.length === 0
         ? null
-        : customBackgroundUrl(this.customBackground.revision),
+        : customBackgroundUrl(this.desiredSkinId, this.customBackground.revision),
       persistence: this.persistence,
       error: this.error,
     })
@@ -388,6 +399,11 @@ export class SkinRuntime {
     this.revision += 1
     this.snapshot = this.buildSnapshot()
     for (const listener of this.listeners) listener()
+  }
+
+  /** Resolve one detached treatment without borrowing another skin's setting. */
+  private resolveCustomBackground(skinId: string): CustomBackgroundSettings {
+    return { ...(this.customBackgrounds[skinId] ?? defaultCustomBackground()) }
   }
 
   /** Release DOM and listener ownership on plugin teardown. */
@@ -404,8 +420,18 @@ export class SkinRuntime {
 }
 
 /** Create the same-origin image URL whose query changes only after accepted bytes change. */
-function customBackgroundUrl(revision: string): string {
-  return `${CUSTOM_BACKGROUND_ROUTE}?v=${encodeURIComponent(revision)}`
+function customBackgroundUrl(skinId: string, revision: string): string {
+  return `${customBackgroundRoute(skinId)}?v=${encodeURIComponent(revision)}`
+}
+
+/** Create the same-origin mutation route for one validated skin id. */
+function customBackgroundRoute(skinId: string): string {
+  return `${CUSTOM_BACKGROUND_ROUTE}/${encodeURIComponent(skinId)}`
+}
+
+/** Detach the Host settings map and every nested visual treatment. */
+function cloneCustomBackgrounds(backgrounds: Record<string, CustomBackgroundSettings>): Record<string, CustomBackgroundSettings> {
+  return Object.fromEntries(Object.entries(backgrounds).map(([skinId, background]) => [skinId, { ...background }]))
 }
 
 /** Narrow the Host response before it changes durable browser state. */

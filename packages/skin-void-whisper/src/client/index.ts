@@ -12,7 +12,7 @@ export const pack: SkinPack = {
   id: 'void-whisper',
   name: '虚空低语',
   description: '蓝黑虚空工作面、冷紫秘仪边线与克制的电光选中状态。',
-  version: '0.1.0',
+  version: '0.1.1-rc.1',
   dshRange: '0.1.1-rc.2',
   colorScheme: 'fixed-dark',
   previewUrl: '/skin-assets/void-whisper/background.svg',

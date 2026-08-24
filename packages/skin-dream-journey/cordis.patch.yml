@@ -1,0 +1,4 @@
+- insert:
+    - id: skin-dream-journey
+      name: 'dsh-skin-dream-journey'
+      inject: [skinAssets]

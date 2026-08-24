@@ -9,7 +9,7 @@ export const SKIN_SETTINGS_NAMESPACE = 'skin-runtime'
 /** Durable sentinel selecting the unmodified Harness appearance. */
 export const DEFAULT_SKIN_ID = 'none'
 
-/** Same-origin Host endpoint for the one user-owned background image. */
+/** Same-origin Host endpoint prefix for skin-scoped user background images. */
 export const CUSTOM_BACKGROUND_ROUTE = '/skin-assets/user/background'
 
 /** How a user-owned background fills the viewport. */
@@ -18,7 +18,7 @@ export type CustomBackgroundFit = 'cover' | 'contain'
 /** Stable viewport anchors exposed by the background editor. */
 export type CustomBackgroundPosition = 'center' | 'top' | 'bottom' | 'left' | 'right'
 
-/** User-owned background state stored as one atomic settings field. */
+/** User-owned background state stored for one skin. */
 export interface CustomBackgroundSettings {
   /** Whether the stored image currently replaces the skin package background. */
   enabled: boolean
@@ -55,8 +55,8 @@ export interface SkinSettings {
   activeSkinId: string
   /** Whether package-provided ambient motion may run. */
   motionEnabled: boolean
-  /** Local user-owned image and its display treatment. */
-  customBackground: CustomBackgroundSettings
+  /** Local user-owned images and display treatments keyed by skin id. */
+  customBackgrounds: Record<string, CustomBackgroundSettings>
 }
 
 /** One explicit static asset owned by a skin package. */
